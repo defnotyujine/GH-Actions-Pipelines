@@ -11,6 +11,7 @@ rhel9cis_rule_3_1_2: false
 # doesn't disable this rule, which then tries to install/enable a
 # package named after the (now None) firewall variable.
 rhel9cis_rule_4_1_2: false
+rhel9cis_rule_5_4_2_5: false
 # grubby (kernel cmdline/bootloader management) doesn't exist and
 # can't apply inside any container - no kernel of its own to manage.
 rhel9cis_rule_6_3_1_1: false
