@@ -1,0 +1,28 @@
+---
+ansible_become: false
+system_is_container: true
+skip_reboot: true
+rhel9cis_disruption_high: false
+# No wireless adapters exist in a container; the role's own prelim
+# discovery for this rule is skipped when system_is_container, but the
+# section_3 task consuming it doesn't guard the same way - disable it.
+rhel9cis_rule_3_1_2: false
+# vars/is_container.yml sets rhel9cis_firewall: None for containers but
+# doesn't disable this rule, which then tries to install/enable a
+# package named after the (now None) firewall variable.
+rhel9cis_rule_4_1_2: false
+# grubby (kernel cmdline/bootloader management) doesn't exist and
+# can't apply inside any container - no kernel of its own to manage.
+rhel9cis_rule_6_3_1_1: false
+rhel9cis_rule_6_3_1_2: false
+rhel9cis_rule_6_3_1_3: false
+rhel9cis_rule_6_3_1_4: false
+# authselect binary doesn't exist in a minimal container image (no
+# PAM/sssd stack), so this check has nothing to validate against.
+rhel9cis_allow_authselect_updates: false
+# This privileged container bind-mounts the host's real /dev (nvme, rtc,
+# i2c, watchdog, etc). Something in the overlay storage driver's dirent
+# metadata makes `find -type f` misidentify those host character devices
+# as regular files, so the world-writable-file remediation tries (and
+# fails) to chmod real hardware device nodes it has no business touching.
+rhel9cis_rule_7_1_11: false
