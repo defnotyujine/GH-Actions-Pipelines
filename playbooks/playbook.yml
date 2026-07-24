@@ -1,0 +1,25 @@
+---
+- hosts: all
+  gather_facts: true
+  become: true
+
+  pre_tasks:
+    - name: Run Preliminaries
+      ansible.builtin.include_tasks: tasks/prelims.yml
+      tags: always
+
+  tasks:
+    - name: Apply RHEL 9 CIS Hardening
+      ansible.builtin.include_role:
+        name: RHEL9-CIS
+      tags:
+        - level1-server
+        - level1-workstation
+        - level2-server
+        - level2-workstation
+
+  post_tasks:
+    - name: Deployment Finished
+      ansible.builtin.debug:
+        msg: "Deployment Successfully Finished"
+      tags: always
