@@ -6,13 +6,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  placeholder:
+  galaxy-install:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Placeholder check
-        run: |
-          echo "CI trigger and status reporting are working."
-          echo "This step will be replaced by Molecule/Goss validation of the playbook."
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ansible
+        run: pip install ansible-core
+
+      - name: Install roles and collections
+        run: ansible-galaxy install -r requirements.yml
