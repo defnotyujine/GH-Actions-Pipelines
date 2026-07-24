@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  galaxy-install:
+  molecule-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,8 +17,29 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Ansible
-        run: pip install ansible-core
+      - name: Verify Podman is available
+        run: podman --version
+
+      - name: Install Ansible, Molecule, and test dependencies
+        run: pip install ansible-core molecule molecule-plugins[podman] passlib
+
+      - name: Install collections required by the Molecule Podman driver
+        run: ansible-galaxy collection install containers.podman community.docker
 
       - name: Install roles and collections
         run: ansible-galaxy install -r requirements.yml
+
+      - name: Molecule create
+        run: molecule create
+
+      - name: Molecule converge
+        # Scoped to Level 1 controls for now - Level 2 hasn't been fully
+        # proven out in this container scenario yet. Widen this once verified.
+        run: molecule converge -- --tags level1-server,level1-workstation
+
+      - name: Molecule verify
+        run: molecule verify
+
+      - name: Clean up Molecule instance
+        if: always()
+        run: molecule destroy
