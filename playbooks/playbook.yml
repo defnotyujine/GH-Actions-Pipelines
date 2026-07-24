@@ -4,8 +4,21 @@
   become: true
 
   pre_tasks:
-    - name: Run Preliminaries
-      ansible.builtin.include_tasks: tasks/prelims.yml
+    - name: Update all packages
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        update_cache: true
+      tags: always
+
+    - name: Remove unused packages
+      ansible.builtin.dnf:
+        autoremove: true
+      tags: always
+
+    - name: Set timezone to UTC
+      community.general.timezone:
+        name: UTC
       tags: always
 
   tasks:
