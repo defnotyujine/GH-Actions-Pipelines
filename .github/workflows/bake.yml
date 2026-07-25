@@ -1,0 +1,95 @@
+name: Bake golden image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: bake-golden-image
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: [self-hosted, kvm]
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Preflight - tools, KVM, cache/pool dirs
+        run: |
+          for b in packer ansible-playbook ansible-galaxy qemu-system-x86_64 qemu-img virsh; do
+            command -v "$b" >/dev/null || { echo "::error::missing required tool: $b"; exit 1; }
+          done
+          test -w /dev/kvm || { echo "::error::/dev/kvm not writable by runner user"; exit 1; }
+          # Persist Packer's base-image cache and the image pool across runs.
+          mkdir -p "$HOME/.cache/packer" "$HOME/cis-golden-images"
+          echo "PACKER_CACHE_DIR=$HOME/.cache/packer" >> "$GITHUB_ENV"
+          echo "POOL_DIR=$HOME/cis-golden-images" >> "$GITHUB_ENV"
+
+      - name: Install role and collections
+        run: ansible-galaxy install -r requirements.yml
+
+      - name: Generate per-build SSH key
+        run: ssh-keygen -t ed25519 -N "" -f "$RUNNER_TEMP/bake_key" -C bake
+
+      - name: Compute image name
+        id: img
+        run: echo "name=almalinux9-cis-${GITHUB_SHA::7}-$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Packer init
+        run: packer init packer/
+
+      - name: Packer validate
+        run: |
+          packer validate \
+            -var "ssh_public_key=$(cat "$RUNNER_TEMP/bake_key.pub")" \
+            -var "ssh_private_key_file=$RUNNER_TEMP/bake_key" \
+            -var "image_name=${{ steps.img.outputs.name }}" \
+            packer/
+
+      - name: Packer build
+        run: |
+          packer build \
+            -var "ssh_public_key=$(cat "$RUNNER_TEMP/bake_key.pub")" \
+            -var "ssh_private_key_file=$RUNNER_TEMP/bake_key" \
+            -var "image_name=${{ steps.img.outputs.name }}" \
+            -var "output_directory=$RUNNER_TEMP/packer-out" \
+            packer/
+
+      - name: Publish hardened image to local pool
+        run: |
+          IMG="${{ steps.img.outputs.name }}.qcow2"
+          # Compress into the image pool.
+          qemu-img convert -O qcow2 -c "$RUNNER_TEMP/packer-out/$IMG" "$POOL_DIR/$IMG"
+          ( cd "$POOL_DIR" && sha256sum "$IMG" | tee "$RUNNER_TEMP/$IMG.sha256" )
+          # Refresh the libvirt pool if one named 'cis' is defined over POOL_DIR.
+          virsh pool-refresh cis 2>/dev/null || echo "no libvirt pool 'cis' - image left in $POOL_DIR"
+
+      - name: Assemble report artifact
+        if: always()
+        run: |
+          IMG="${{ steps.img.outputs.name }}.qcow2"
+          mkdir -p "$RUNNER_TEMP/artifact"
+          {
+            echo "image:      $IMG"
+            echo "git_sha:    $GITHUB_SHA"
+            echo "built_utc:  $(date -u +%FT%TZ)"
+            echo "pool_path:  $POOL_DIR/$IMG"
+            cat "$RUNNER_TEMP/$IMG.sha256" 2>/dev/null || echo "checksum:   (image not produced)"
+          } > "$RUNNER_TEMP/artifact/manifest.txt"
+          cp -r /tmp/cis-bake-audit/. "$RUNNER_TEMP/artifact/" 2>/dev/null || echo "no goss audit output found"
+          cp "$RUNNER_TEMP/packer-out/packer-manifest.json" "$RUNNER_TEMP/artifact/" 2>/dev/null || true
+
+      - name: Upload manifest + goss audit report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: golden-image-report
+          path: ${{ runner.temp }}/artifact/
+          if-no-files-found: warn
+
+      - name: Cleanup build scratch
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/packer-out" "$RUNNER_TEMP/bake_key" "$RUNNER_TEMP/bake_key.pub" /tmp/cis-bake-audit
