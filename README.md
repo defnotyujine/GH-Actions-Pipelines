@@ -77,3 +77,6 @@ packer build \
 
 Output: a golden qcow2 in `./output/` plus any audit reports fetched to
 `/tmp/cis-bake-audit/`.
+
+### Author
+Eugene S. Garces
