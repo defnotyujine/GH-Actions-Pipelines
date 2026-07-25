@@ -27,3 +27,4 @@ rhel9cis_allow_authselect_updates: false
 # as regular files, so the world-writable-file remediation tries (and
 # fails) to chmod real hardware device nodes it has no business touching.
 rhel9cis_rule_7_1_11: false
+rhel9cis_syslog: journald
