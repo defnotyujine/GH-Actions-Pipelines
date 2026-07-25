@@ -84,7 +84,7 @@ jobs:
 
       - name: Upload manifest + goss audit report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: golden-image-report
           path: ${{ runner.temp }}/artifact/
