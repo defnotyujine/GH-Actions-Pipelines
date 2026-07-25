@@ -68,7 +68,7 @@ source "qemu" "almalinux9_cis" {
 build {
   name    = "almalinux9-cis"
   sources = ["source.qemu.almalinux9_cis"]
-s
+
   provisioner "ansible" {
     playbook_file = "${path.root}/../playbooks/playbook.yml"
     user          = "root"
