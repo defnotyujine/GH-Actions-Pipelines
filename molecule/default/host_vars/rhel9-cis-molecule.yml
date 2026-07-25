@@ -6,12 +6,12 @@ rhel9cis_disruption_high: false
 # No wireless adapters exist in a container; the role's own prelim
 # discovery for this rule is skipped when system_is_container, but the
 # section_3 task consuming it doesn't guard the same way - disable it.
-rhel9cis_rule_3_1_2: false
-# vars/is_container.yml sets rhel9cis_firewall: None for containers but
-# doesn't disable this rule, which then tries to install/enable a
-# package named after the (now None) firewall variable.
-rhel9cis_rule_4_1_2: false
-rhel9cis_rule_5_4_2_5: false
+# rhel9cis_rule_3_1_2: false
+# # vars/is_container.yml sets rhel9cis_firewall: None for containers but
+# # doesn't disable this rule, which then tries to install/enable a
+# # package named after the (now None) firewall variable.
+# rhel9cis_rule_4_1_2: false
+# rhel9cis_rule_5_4_2_5: false
 # grubby (kernel cmdline/bootloader management) doesn't exist and
 # can't apply inside any container - no kernel of its own to manage.
 rhel9cis_rule_6_3_1_1: false
