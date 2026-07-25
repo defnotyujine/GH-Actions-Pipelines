@@ -8,6 +8,8 @@ rhel9cis_disruption_high: false
 rhel9cis_level_2: false
 setup_audit: true
 run_audit: true
+fetch_audit_output: true
+audit_output_destination: /tmp/audit_summaries/
 
 rhel9cis_rule_3_1_2: false
 rhel9cis_rule_4_1_2: false
