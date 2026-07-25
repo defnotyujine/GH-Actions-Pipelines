@@ -1,0 +1,69 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Bootstrap sudo, iproute, openssh, procps via raw (idempotent - skips if already installed)
+      ansible.builtin.raw: |
+        dnf install -y sudo iproute openssh-server openssh-clients procps-ng
+      changed_when: false
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Install packages the CIS role expects to already be present
+      ansible.builtin.dnf:
+        name:
+          - audit
+          - aide
+          - crypto-policies
+          - crypto-policies-scripts
+          - firewalld
+          - policycoreutils
+          - policycoreutils-python-utils
+          - selinux-policy-targeted
+          - chrony
+          - rsyslog
+          - logrotate
+          - cronie
+          - acl
+          - kmod
+          - dnf-plugins-core
+          - python3-libselinux
+          - python3-policycoreutils
+          - python3-dnf-plugin-versionlock
+          - tmux
+          - git
+          - procps-ng
+          - dmidecode
+          - hostname
+        state: present
+
+    - name: Generate SSH host keys (not created automatically in a container)
+      ansible.builtin.command: ssh-keygen -A
+      args:
+        creates: /etc/ssh/ssh_host_ed25519_key
+
+    - name: Create directories minimal init images lack
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - /etc/sysctl.d
+        - /etc/ssh/sshd_config.d
+        - /var/log/audit
+
+    - name: Stub /etc/default/grub so GRUB-tagged tasks don't fail in a container
+      ansible.builtin.copy:
+        dest: /etc/default/grub
+        content: |
+          GRUB_TIMEOUT=5
+          GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+          GRUB_DEFAULT=saved
+          GRUB_DISABLE_SUBMENU=true
+          GRUB_TERMINAL_OUTPUT="console"
+          GRUB_CMDLINE_LINUX=""
+          GRUB_DISABLE_RECOVERY="true"
+        mode: "0644"

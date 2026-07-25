@@ -1,0 +1,12 @@
+---
+- name: Set root password so PAM rules don't lock us out
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Set root password
+      ansible.builtin.user:
+        name: root
+        password: "{{ 'changeme123!' | password_hash('sha512') }}"
+
+- name: Converge
+  ansible.builtin.import_playbook: ../../playbooks/playbook.yml

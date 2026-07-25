@@ -1,0 +1,12 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: No verification wired up yet
+      ansible.builtin.debug:
+        msg: >-
+          Placeholder verify step - this milestone only proves the CIS
+          hardening playbook converges cleanly. Goss-based verification
+          will replace this step later.

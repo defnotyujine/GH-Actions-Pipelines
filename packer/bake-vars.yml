@@ -1,0 +1,16 @@
+---
+
+ansible_become: false
+
+skip_reboot: true
+
+rhel9cis_sshd_allowusers: ""
+
+rhel9cis_rule_5_1_20: false
+
+# Audit
+setup_audit: true
+run_audit: true
+fetch_audit_output: true
+audit_output_collection_method: fetch
+audit_output_destination: /tmp/cis-bake-audit/

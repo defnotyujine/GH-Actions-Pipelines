@@ -1,0 +1,38 @@
+---
+- hosts: all
+  gather_facts: true
+  become: true
+
+  pre_tasks:
+    - name: Update all packages
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        update_cache: true
+      tags: always
+
+    - name: Remove unused packages
+      ansible.builtin.dnf:
+        autoremove: true
+      tags: always
+
+    - name: Set timezone to UTC
+      community.general.timezone:
+        name: UTC
+      tags: always
+
+  tasks:
+    - name: Apply RHEL 9 CIS Hardening
+      ansible.builtin.include_role:
+        name: RHEL9-CIS
+      tags:
+        - level1-server
+        - level1-workstation
+        - level2-server
+        - level2-workstation
+
+  post_tasks:
+    - name: Deployment Finished
+      ansible.builtin.debug:
+        msg: "Deployment Successfully Finished"
+      tags: always

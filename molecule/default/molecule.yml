@@ -1,0 +1,32 @@
+---
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+    requirements-file: requirements.yml
+
+driver:
+  name: podman
+
+platforms:
+  - name: rhel9-cis-molecule
+    image: docker.io/almalinux/9-init:9
+    command: /sbin/init
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+
+provisioner:
+  name: ansible
+  log: true
+  config_options:
+    defaults:
+      interpreter_python: auto_silent
+      callbacks_enabled: profile_tasks, timer
+  inventory:
+    links:
+      group_vars: ../../sysconfig/group_vars
+      host_vars: host_vars
+
+verifier:
+  name: ansible
